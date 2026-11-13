@@ -76,6 +76,26 @@ Lowering the threshold raised recall from 0.50 to 0.80 with precision staying ne
 - Reported precision and recall, not just accuracy, and compared against an always-"no" baseline.
 - Added experiments on learning rate, lambda and threshold.
 
+
+## Changelog: Week 4 patch (evaluation upgrade)
+
+**What changed**
+- Treated zeros in Glucose, BloodPressure, SkinThickness, Insulin and BMI as missing values instead of real measurements. Zero counts out of 768 rows: TODO (paste your five counts; Insulin had the most).
+- Split train/test first (80/20, stratified: 614 train, 154 test), then filled gaps with the median learned from training data only.
+- Wrapped imputation, scaling and logistic regression in a scikit-learn Pipeline, so nothing leaks from held-out folds.
+- Evaluated with stratified 5-fold cross-validation on the training set: accuracy 78.8% +/- 1.9% (folds 76.2% to 82.1%). The always-"not diabetic" baseline scores about 65.1%.
+
+**What the new evaluation showed**
+- At the default 0.5 threshold, cross-validated recall for diabetic patients was only 0.57 (precision 0.76), so about 4 in 10 diabetic patients were missed. Accuracy hid this.
+- Average precision was 0.72, against about 0.35 for a model with no skill.
+- I chose a threshold with a rule fixed in advance: the highest threshold with recall of at least 0.80 on out-of-fold training probabilities. That gave a threshold of about 0.281 (cross-validated precision 0.58, recall 0.80).
+- On the 154-patient test set, evaluated once: recall rose from 0.50 to 0.83, while precision stayed about the same (0.60 to 0.58). Missed diabetic patients fell from 27 to 9, and false alarms rose from 18 to 33. I chose to accept extra follow-up tests in exchange for fewer missed cases.
+
+**Caveats**
+- The test set has only 54 diabetic patients, so one patient moves recall by about 2 points.
+- Median filling is a compromise, because the missing values may not be random.
+- Results above this section come from the original run, before these changes, so they are not directly comparable.
+
 ## How to run
 1. `pip install numpy pandas matplotlib scikit-learn jupyter`
 2. Download `diabetes.csv` from the Kaggle link above and place it in this folder.
